@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ad Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Archivo+Black&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF6F1;
+    --panel: #FFFFFF;
+    --ink: #1A1A1A;
+    --muted: #8B8479;
+    --border: #ECE4D8;
+    --coral: #FF5A36;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 48px 20px 80px;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  .kicker {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    line-height: 1.05;
+  }
+
+  .subhead {
+    font-size: 15.5px;
+    color: var(--muted);
+    margin: 0 0 36px;
+    max-width: 520px;
+  }
+
+  .form-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 4px rgba(26,26,26,0.03), 0 16px 32px rgba(26,26,26,0.05);
+    margin-bottom: 40px;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input, textarea {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  input:focus, textarea:focus { border-color: var(--coral); }
+  textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
+
+  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; }
+
+  .char-count { font-size: 12px; color: var(--muted); }
+  .char-count.warn { color: var(--coral); }
+
+  button.generate {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    background: var(--coral);
+    color: #FFFFFF;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(255,90,54,0.28);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+  button.generate:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(255,90,54,0.35); }
+  button.generate:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .error-box {
+    border: 1px solid var(--coral);
+    color: var(--coral);
+    background: rgba(255,90,54,0.06);
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  @media (max-width: 860px) {
+    .cards { grid-template-columns: 1fr; }
+    h1 { font-size: 32px; }
+  }
+
+  .card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(26,26,26,0.04), 0 16px 32px rgba(26,26,26,0.08);
+    opacity: 0;
+    transform: translateY(10px);
+    animation: cardIn 0.4s ease forwards;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:nth-child(1) { animation-delay: 0.02s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.18s; }
+
+  @keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Poster mockup: real generated image behind headline --- */
+  .poster {
+    background: var(--poster-bg);
+    color: #FAF6F1;
+    padding: 30px 24px 26px;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Shimmer while the image is generating - hidden once it loads */
+  .poster::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+    pointer-events: none;
+  }
+  .poster:has(.poster-img.loaded)::before,
+  .poster.img-failed::before { display: none; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .poster-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+  .poster-img.loaded { opacity: 1; }
+
+  .poster-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 5%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.35) 100%);
+  }
+
+  .poster-top, .poster-headline, .poster-footer {
+    position: relative;
+    z-index: 2;
+  }
+
+  .poster-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+
+  .poster-headline {
+    font-family: 'Archivo Black', 'Space Grotesk', sans-serif;
+    font-size: 27px;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 20px 0 0;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+  }
+
+  .poster-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+
+  button.regen-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #FAF6F1;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 6px 11px;
+    border-radius: 99px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.15s ease;
+  }
+  button.regen-btn:hover { background: rgba(0,0,0,0.55); }
+  button.regen-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  /* --- Brief panel below the poster: what a designer would actually build --- */
+  .brief {
+    background: var(--panel);
+    padding: 18px 20px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .brief-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .visual-desc {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #3A362E;
+  }
+
+  .why-it-works {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    font-style: italic;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+    margin-top: 2px;
+  }
+
+  button.copy-btn {
+    align-self: flex-start;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    margin-top: 4px;
+  }
+  button.copy-btn:hover { background: var(--bg); color: var(--ink); }
+  button.copy-btn.copied { color: var(--coral); border-color: var(--coral); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="kicker">Ad Maker</div>
+  <h1>Not copy. Concepts.</h1>
+  <p class="subhead">Describe what you're selling. Get back three actual creative concepts — a real generated image, a headline that only lands once you see it, and the format it belongs on. AI-generated imagery can miss the mark; hit Regenerate if a shot doesn't land.</p>
+
+  <div class="form-panel">
+    <div class="field">
+      <label for="productName">Product Name</label>
+      <input id="productName" type="text" placeholder="e.g. Aurora Standing Desk" maxlength="120" />
+    </div>
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" placeholder="What does it do, who's it for, what makes it different..."></textarea>
+    </div>
+    <div class="field">
+      <label for="audience">Target Audience <span style="text-transform:none; font-weight:400;">(optional)</span></label>
+      <input id="audience" type="text" placeholder="e.g. remote workers, 25-40" maxlength="200" />
+    </div>
+
+    <div class="row">
+      <span class="char-count" id="charCount">0 / 1500</span>
+      <button class="generate" id="generateBtn">Generate Concepts</button>
+    </div>
+  </div>
+
+  <div id="errorZone"></div>
+  <div class="cards" id="cardsZone"></div>
+</div>
+
+<script>
+  const productName = document.getElementById('productName');
+  const description = document.getElementById('description');
+  const audience = document.getElementById('audience');
+  const charCount = document.getElementById('charCount');
+  const generateBtn = document.getElementById('generateBtn');
+  const errorZone = document.getElementById('errorZone');
+  const cardsZone = document.getElementById('cardsZone');
+
+  const MAX_CHARS = 1500;
+  const MIN_CHARS = 10;
+
+  // Distinct dark fallback colors per technique, shown until the image loads (or if it fails)
+  const POSTER_BG = ['#1B2A4A', '#3D2B1F', '#20241F'];
+
+  const IMAGE_STYLE_SUFFIX =
+    ', advertising photography, dramatic studio lighting, high contrast, professional product photography, ultra detailed, 4k';
+
+  function pollinationsUrl(promptText, seed) {
+    const fullPrompt = promptText + IMAGE_STYLE_SUFFIX;
+    const encoded = encodeURIComponent(fullPrompt);
+    return `https://image.pollinations.ai/prompt/${encoded}?width=800&height=1000&seed=${seed}&nologo=true`;
+  }
+
+  description.addEventListener('input', () => {
+    const len = description.value.length;
+    charCount.textContent = `${len} / ${MAX_CHARS}`;
+    charCount.classList.toggle('warn', len > MAX_CHARS);
+  });
+
+  function renderError(message) {
+    errorZone.innerHTML = `<div class="error-box">${message}</div>`;
+    cardsZone.innerHTML = '';
+  }
+
+  function renderCards(concepts) {
+    errorZone.innerHTML = '';
+    cardsZone.innerHTML = concepts.map((c, i) => {
+      const seed = Math.floor(Math.random() * 1_000_000);
+      return `
+      <div class="card">
+        <div class="poster" style="--poster-bg:${POSTER_BG[i % POSTER_BG.length]}" data-idx="${i}" data-seed="${seed}">
+          <img class="poster-img" src="${pollinationsUrl(c.visual_concept, seed)}"
+               alt="${c.headline}"
+               onload="this.classList.add('loaded')"
+               onerror="this.closest('.poster').classList.add('img-failed')" />
+          <div class="poster-scrim"></div>
+          <div class="poster-top">
+            <span>${c.angle}</span>
+            <span>${c.format}</span>
+          </div>
+          <div class="poster-headline">${c.headline}</div>
+          <div class="poster-footer">
+            <button class="regen-btn" data-idx="${i}">↻ Regenerate image</button>
+          </div>
+        </div>
+        <div class="brief">
+          <div>
+            <div class="brief-label">The Visual Idea</div>
+            <div class="visual-desc">${c.visual_concept}</div>
+          </div>
+          <div class="why-it-works">${c.why_it_works}</div>
+          <button class="copy-btn" data-idx="${i}">Copy</button>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    cardsZone.querySelectorAll('.copy-btn').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const c = concepts[i];
+        const text = `${c.headline}\n\nFormat: ${c.format}\nVisual: ${c.visual_concept}\n\nWhy it works: ${c.why_it_works}`;
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = 'Copied';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+        });
+      });
+    });
+
+    cardsZone.querySelectorAll('.regen-btn').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const c = concepts[i];
+        const poster = cardsZone.querySelector(`.poster[data-idx="${i}"]`);
+        const img = poster.querySelector('.poster-img');
+        const newSeed = Math.floor(Math.random() * 1_000_000);
+
+        btn.disabled = true;
+        poster.classList.remove('img-failed');
+        img.classList.remove('loaded');
+        img.src = pollinationsUrl(c.visual_concept, newSeed);
+
+        img.onload = () => { img.classList.add('loaded'); btn.disabled = false; };
+        img.onerror = () => { poster.classList.add('img-failed'); btn.disabled = false; };
+      });
+    });
+  }
+
+  async function generate() {
+    const desc = description.value.trim();
+
+    if (desc.length < MIN_CHARS) {
+      renderError(`Give at least ${MIN_CHARS} characters of product description — too little to work from.`);
+      return;
+    }
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Directing…';
+    errorZone.innerHTML = '';
+    cardsZone.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_name: productName.value.trim() || 'This product',
+          description: desc,
+          audience: audience.value.trim() || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      renderCards(data.concepts);
+    } catch (err) {
+      renderError(err.message || 'Something went wrong generating concepts.');
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = 'Generate Concepts';
+    }
+  }
+
+  generateBtn.addEventListener('click', generate);
+</script>
+
+</body>
+</html>
